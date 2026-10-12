@@ -1,0 +1,15 @@
+{
+  "name": "metronom-de-trupa",
+  "version": "1.0.0",
+  "description": "Metronom sincronizat pentru trupă, prin WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

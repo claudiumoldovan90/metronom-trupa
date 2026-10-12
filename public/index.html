@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17141c">
+<title>Metronom de trupă</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#17141c; --panel:#211d28; --line:#352f3f; --fg:#ece6f2; --muted:#9a90a8;
+  --amber:#ffb547; --amber-dim:#5a4126; --ok:#6fd49a; --warn:#f2c14e; --bad:#ff7a6b;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg);margin:0}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0}
+.status{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--ok)} .dot.wait{background:var(--warn)} .dot.off{background:var(--bad)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.field{display:flex;flex-direction:column;gap:6px}
+input[type=text],input[type=password]{font:inherit;font-size:16px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 auto}
+button{font:inherit;font-weight:600;font-size:15px;border-radius:10px;padding:12px 14px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;touch-action:manipulation}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--amber);color:#1d1408;border-color:var(--amber)}
+button.small{padding:8px 10px;font-size:13px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.err{font-size:13px;color:var(--bad);margin:0}
+.code{font-family:var(--f-mono);font-size:14px;color:var(--amber)}
+.readout{display:grid;grid-template-columns:1fr auto;align-items:end;gap:6px 14px}
+.bpm{font-family:var(--f-display);font-weight:800;font-size:clamp(84px,26vw,132px);line-height:.82;font-variant-numeric:tabular-nums}
+.bpm small{font-size:.22em;letter-spacing:.1em;color:var(--muted);margin-left:6px;font-weight:600}
+.meta{text-align:right;display:flex;flex-direction:column;gap:2px;padding-bottom:6px}
+.meta .sig{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1}
+.meta .tname{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-style:italic}
+.lamps{display:flex;gap:8px}
+.lamp{flex:1;height:22px;border-radius:6px;background:var(--amber-dim);opacity:.45;transition:opacity .06s,background .06s}
+.lamp.accent{box-shadow:inset 0 0 0 2px var(--amber-dim)}
+.lamp.lit{opacity:1;background:var(--amber)}
+.lamp.lit.accent{background:#fff1d6}
+.who{font-size:13px;color:var(--muted);margin:0}
+.who b{color:var(--fg);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber)}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.steps button{padding:12px 0;font-family:var(--f-mono);font-weight:500}
+.go{font-size:18px;padding:16px}
+.go.stop{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+select{font:inherit;font-size:15px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.people{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.people li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.people li:first-child{border-top:0}
+.people .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.lead{color:#1d1408;background:var(--amber);border-color:var(--amber)}
+.pill.ok{color:var(--ok);border-color:var(--ok)} .pill.warn{color:var(--warn);border-color:var(--warn)} .pill.bad{color:var(--bad);border-color:var(--bad)}
+.banner{border:1px dashed var(--amber);border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner p{margin:0;flex:1 1 200px}
+.val{font-family:var(--f-mono);font-size:13px;color:var(--fg);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.lamp{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Metronom de trupă</h1>
+    <div class="status"><span class="dot" id="connDot"></span><span id="connText">se conectează…</span></div>
+  </header>
+
+  <section class="panel" id="joinPanel">
+    <div class="field">
+      <label class="lbl" for="nameIn">Numele tău</label>
+      <input type="text" id="nameIn" maxlength="24" placeholder="ex. Andrei – tobe" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="lbl" for="codeIn">Codul camerei</label>
+      <input type="text" id="codeIn" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label class="lbl" for="pinIn">PIN de lider (opțional)</label>
+      <input type="password" id="pinIn" maxlength="12" autocomplete="off" placeholder="doar cine îl știe poate conduce">
+    </div>
+    <div class="row">
+      <button class="primary" id="createBtn">Creez camera și conduc eu</button>
+      <button id="joinBtn">Intru în cameră</button>
+    </div>
+    <p class="err" id="joinErr" hidden></p>
+    <p class="hint">Toți deschid acest link și scriu același cod. Cel care conduce setează tempoul, ceilalți îl aud sincronizat. Membrii lasă PIN-ul gol.</p>
+  </section>
+
+  <section class="panel" id="stagePanel" hidden>
+    <div class="row" style="justify-content:space-between">
+      <span class="hint" style="flex:0 1 auto">Camera <span class="code" id="roomCode"></span></span>
+      <button class="small" id="copyBtn" style="flex:0 0 auto">Copiază linkul</button>
+    </div>
+    <div class="readout">
+      <div class="bpm"><span id="bpmVal">100</span><small>BPM</small></div>
+      <div class="meta"><span class="sig" id="sigVal">4/4</span><span class="tname" id="tempoName">Moderato</span></div>
+    </div>
+    <div class="lamps" id="lamps" aria-hidden="true"></div>
+    <p class="who" id="whoLine"></p>
+    <p class="err" id="roomErr" hidden></p>
+    <div class="banner" id="leaderlessBanner" hidden>
+      <p>Nimeni nu conduce acum. Tempoul continuă până preia cineva controlul.</p>
+      <button class="small primary" id="claimBtn2">Conduc eu</button>
+    </div>
+  </section>
+
+  <section class="panel" id="leadPanel" hidden>
+    <span class="lbl">Controale de lider</span>
+    <input type="range" id="bpmRange" min="30" max="260" step="1" value="100" aria-label="Tempo în BPM">
+    <div class="steps">
+      <button id="m5">−5</button><button id="m1">−1</button>
+      <button id="tapBtn" style="font-family:var(--f-body);font-weight:600">Tap</button>
+      <button id="p1">+1</button><button id="p5">+5</button>
+    </div>
+    <div class="row">
+      <label class="lbl" for="sigSel" style="flex:0 0 auto">Timpi pe măsură</label>
+      <select id="sigSel" style="flex:0 0 auto"></select>
+    </div>
+    <button class="go primary" id="goBtn">Start pentru toți</button>
+  </section>
+
+  <section class="panel" id="mePanel" hidden>
+    <span class="lbl">Doar pe dispozitivul tău</span>
+    <button id="soundBtn">Activează sunetul</button>
+    <div class="field">
+      <label class="lbl" for="volRange">Volum <span class="val" id="volVal"></span></label>
+      <input type="range" id="volRange" min="0" max="100" value="80">
+    </div>
+    <div class="field">
+      <label class="lbl" for="nudgeRange">Corecție întârziere <span class="val" id="nudgeVal"></span></label>
+      <input type="range" id="nudgeRange" min="-150" max="150" step="5" value="0">
+      <p class="hint">Dacă auzi click-ul tău puțin după al celorlalți (de ex. pe căști Bluetooth), trage spre minus.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="bandPanel" hidden>
+    <div class="row" style="justify-content:space-between">
+      <span class="lbl" style="flex:0 1 auto">În cameră</span>
+      <button class="small" id="claimBtn" style="flex:0 0 auto">Preiau controlul</button>
+    </div>
+    <div class="banner" id="confirmClaim" hidden>
+      <p>Preiei tempoul<span id="confirmFromWrap"> de la <b id="confirmFrom"></b></span>?</p>
+      <input type="password" id="claimPin" maxlength="12" placeholder="PIN de lider" autocomplete="off" hidden style="flex:1 1 140px">
+      <button class="small primary" id="claimYes">Da, conduc eu</button>
+      <button class="small" id="claimNo">Renunț</button>
+    </div>
+    <ul class="people" id="people"></ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const clock = () => performance.timeOrigin + performance.now();
+  const store = {
+    get(k, d){ try { const v = localStorage.getItem('mt.'+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set(k, v){ try { localStorage.setItem('mt.'+k, JSON.stringify(v)); } catch(e){} }
+  };
+
+  // ---------- stare ----------
+  // st: tempoul comun, cu timpi în ceasul SERVERULUI (ms)
+  let st = { bpm: 100, beats: 4, running: false, startAt: 0, beat0: 0, epoch: -1 };
+  let myId = null, leaderId = null, peers = [], hasPin = false;
+  let offset = 0, samples = [], synced = false;   // offset = ceasServer - ceasulMeu
+  let ws = null, joined = null, wasLeader = false, retry = 0, pingTimer = null, lastRttSent = 0;
+  let volume = store.get('vol', 80), nudge = store.get('nudge', 0);
+  const isLeader = () => myId !== null && leaderId === myId;
+
+  // ---------- audio ----------
+  let ctx = null, soundOn = false, nodes = [], schedIdx = -1, schedEpoch = null;
+  function ensureAudio(){
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC({ latencyHint: 'interactive' });
+    }
+    if (ctx.state !== 'running') ctx.resume().catch(()=>{});
+    const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource();
+    s.buffer = b; s.connect(ctx.destination); s.start(0);
+    soundOn = true; schedEpoch = null; updateSoundBtn(); wake();
+  }
+  const sharedNow = () => clock() + offset;
+  const period = () => 60000 / st.bpm;
+  function audioTimeFor(sharedT){
+    const localT = sharedT - offset + nudge;
+    if (ctx.getOutputTimestamp) {
+      const ts = ctx.getOutputTimestamp();
+      if (ts && ts.contextTime > 0 && ts.performanceTime > 0) {
+        const perfT = performance.timeOrigin + ts.performanceTime;
+        if (Math.abs(perfT - clock()) < 500) return ts.contextTime + (localT - perfT) / 1000;
+      }
+    }
+    const lat = ctx.outputLatency || ctx.baseLatency || 0;
+    return ctx.currentTime + (localT - clock()) / 1000 - lat;
+  }
+  function click(at, accent, sharedT){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = accent ? 1760 : 1100; o.type = 'square';
+    const v = (volume / 100) * (accent ? 0.5 : 0.32);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(Math.max(v, 0.0002), at + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.045);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(at); o.stop(at + 0.06);
+    nodes.push({ o, t: sharedT });
+  }
+  function cancelFrom(sharedT){
+    const keepAfter = sharedNow() - 1000;
+    nodes = nodes.filter(n => {
+      if (n.t >= sharedT - 2) { try { n.o.stop(0); } catch(e){} return false; }
+      return n.t > keepAfter;
+    });
+  }
+  function tick(){
+    if (!ctx || !soundOn || ctx.state !== 'running' || !st.running || !synced) return;
+    const p = period(), now = sharedNow();
+    if (schedEpoch !== st.epoch) { schedEpoch = st.epoch; schedIdx = -1; }
+    let i = Math.max(schedIdx + 1, Math.ceil((now - st.startAt) / p), 0);
+    const horizon = now + 160;
+    while (st.startAt + i * p <= horizon) {
+      const t = st.startAt + i * p;
+      const pos = (st.beat0 + i) % st.beats;
+      const at = audioTimeFor(t);
+      if (at > ctx.currentTime) click(at, pos === 0 && st.beats > 1, t);
+      schedIdx = i; i++;
+    }
+  }
+  setInterval(tick, 25);
+
+  function applyState(next){
+    if (next.epoch === st.epoch) return;
+    if (ctx) cancelFrom(next.running ? next.startAt : -Infinity);
+    st = next; schedEpoch = null;
+    renderReadout(); tick();
+  }
+
+  // ---------- conexiune ----------
+  function wsUrl(){ return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'; }
+  function connect(){
+    setConn('wait', retry ? 'se reconectează…' : 'se conectează…');
+    ws = new WebSocket(wsUrl());
+    ws.onopen = () => {
+      retry = 0; setConn('on', 'conectat');
+      samples = []; synced = false; startPinging();
+      if (joined) sendMsg({ t: 'join', room: joined.code, name: joined.name, lead: wasLeader, pin: joined.pin });
+    };
+    ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch(_) { return; } onMsg(m); };
+    ws.onclose = () => {
+      stopPinging(); myId = null;
+      setConn('off', 'conexiune pierdută, reîncerc…');
+      const wait = Math.min(8000, 500 * Math.pow(2, retry++));
+      setTimeout(connect, wait);
+      renderAll();
+    };
+  }
+  function sendMsg(m){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+  function startPinging(){
+    stopPinging();
+    const go = () => {
+      sendMsg({ t: 'ping', c: clock() });
+      pingTimer = setTimeout(go, samples.length < 10 ? 400 : 3000);
+    };
+    go();
+  }
+  function stopPinging(){ clearTimeout(pingTimer); pingTimer = null; }
+
+  function onMsg(m){
+    switch (m.t) {
+      case 'hello': myId = m.id; break;
+      case 'pong': {
+        if (!Number.isFinite(m.c) || !Number.isFinite(m.s)) return;
+        const t2 = clock(), rtt = t2 - m.c;
+        samples.push({ rtt, off: m.s + rtt / 2 - t2 });
+        if (samples.length > 15) samples.shift();
+        const best = samples.reduce((a, b) => b.rtt < a.rtt ? b : a);
+        const first = !synced;
+        offset = best.off; synced = true;
+        if (first) { schedEpoch = null; renderAll(); }
+        if (joined && (t2 - lastRttSent > 5000 || first)) { lastRttSent = t2; sendMsg({ t: 'rtt', v: best.rtt }); }
+        break;
+      }
+      case 'joined': $('#joinErr').hidden = true; break;
+      case 'state':
+        leaderId = m.leader; peers = Array.isArray(m.peers) ? m.peers : []; hasPin = !!m.hasPin;
+        wasLeader = isLeader();
+        if (m.st) applyState(m.st);
+        renderAll();
+        break;
+      case 'err':
+        showErr(String(m.msg || 'Eroare'));
+        break;
+    }
+  }
+  function showErr(t){
+    const el = joined ? $('#roomErr') : $('#joinErr');
+    el.textContent = t; el.hidden = false;
+    clearTimeout(showErr.t); showErr.t = setTimeout(() => el.hidden = true, 6000);
+  }
+
+  // ---------- acțiuni ----------
+  function enter(asLeader){
+    const code = $('#codeIn').value.trim().toLowerCase().replace(/[^a-z0-9_.-]+/g, '-').replace(/^[-_.]+/, '').slice(0, 40);
+    if (!code) { showErr('Scrie un cod pentru cameră, de ex. repetitie-joi.'); return; }
+    const name = $('#nameIn').value.trim().slice(0, 24) || 'Muzician';
+    const pin = $('#pinIn').value.trim().slice(0, 12);
+    store.set('name', name); store.set('code', code);
+    ensureAudio();
+    joined = { code, name, pin }; wasLeader = asLeader;
+    try { history.replaceState(null, '', '#' + code); } catch(e){}
+    $('#roomCode').textContent = code;
+    $('#joinPanel').hidden = true;
+    ['#stagePanel', '#mePanel', '#bandPanel'].forEach(s => $(s).hidden = false);
+    sendMsg({ t: 'join', room: code, name, lead: asLeader, pin });
+    renderAll();
+  }
+  const changeTempo = (bpm, beats) => sendMsg({ t: 'tempo', bpm: Math.round(bpm), beats: beats || st.beats });
+
+  // ---------- afișare ----------
+  const TEMPI = [[40,'Grave'],[60,'Largo'],[66,'Larghetto'],[76,'Adagio'],[108,'Andante'],[120,'Moderato'],[156,'Allegro'],[176,'Vivace'],[200,'Presto'],[999,'Prestissimo']];
+  function renderReadout(){
+    $('#bpmVal').textContent = st.bpm;
+    $('#sigVal').textContent = st.beats + '/4';
+    $('#tempoName').textContent = TEMPI.find(([m]) => st.bpm < m)[1];
+    if (document.activeElement !== $('#bpmRange')) $('#bpmRange').value = st.bpm;
+    $('#sigSel').value = String(st.beats);
+    const go = $('#goBtn');
+    go.textContent = st.running ? 'Stop pentru toți' : 'Start pentru toți';
+    go.classList.toggle('stop', st.running); go.classList.toggle('primary', !st.running);
+    const lamps = $('#lamps');
+    if (lamps.childElementCount !== st.beats) {
+      lamps.textContent = '';
+      for (let i = 0; i < st.beats; i++) { const d = document.createElement('div'); d.className = 'lamp' + (i === 0 && st.beats > 1 ? ' accent' : ''); lamps.appendChild(d); }
+    }
+  }
+  function setConn(kind, text){ $('#connDot').className = 'dot ' + kind; $('#connText').textContent = text; }
+  function updateSoundBtn(){
+    const b = $('#soundBtn');
+    b.textContent = soundOn ? 'Sunet pornit · apasă pentru mut' : 'Activează sunetul';
+    b.classList.toggle('primary', !soundOn);
+  }
+  function renderAll(){
+    if (!joined) return;
+    const lead = isLeader();
+    $('#leadPanel').hidden = !lead;
+    const L = peers.find(p => p.id === leaderId);
+    const who = $('#whoLine'); who.textContent = '';
+    if (!myId) who.textContent = 'Fără conexiune la server. Reîncerc automat…';
+    else if (!synced) who.textContent = 'Se sincronizează ceasul…';
+    else if (lead) who.textContent = 'Tu conduci. Ce schimbi aici aud toți.';
+    else if (L) { who.append('Tempo setat de '); const b = document.createElement('b'); b.textContent = L.name; who.append(b); }
+    else who.textContent = 'Aștept pe cineva să conducă…';
+    $('#leaderlessBanner').hidden = !(myId && !leaderId);
+    $('#claimBtn').hidden = lead || !myId;
+
+    const ul = $('#people'); ul.textContent = '';
+    const sorted = [...peers].sort((a, b) => (b.id === leaderId) - (a.id === leaderId));
+    for (const p of sorted) {
+      const li = document.createElement('li');
+      const nm = document.createElement('span'); nm.className = 'nm';
+      nm.textContent = (p.name || 'Muzician') + (p.id === myId ? ' (tu)' : '');
+      const pill = document.createElement('span'); pill.className = 'pill';
+      if (p.id === leaderId) { pill.classList.add('lead'); pill.textContent = 'conduce'; }
+      else if (typeof p.rtt === 'number') {
+        pill.classList.add(p.rtt < 80 ? 'ok' : p.rtt < 200 ? 'warn' : 'bad');
+        pill.textContent = 'sync ±' + Math.max(1, Math.round(p.rtt / 2)) + ' ms';
+      } else pill.textContent = 'se sincronizează';
+      li.append(nm, pill); ul.appendChild(li);
+    }
+  }
+
+  let lastLit = -2;
+  function frame(){
+    let lit = -1;
+    if (st.running && synced) {
+      const p = period(), now = sharedNow() + nudge;
+      if (now >= st.startAt) {
+        const i = Math.floor((now - st.startAt) / p);
+        if ((now - st.startAt) - i * p < Math.min(140, p * 0.5)) lit = (st.beat0 + i) % st.beats;
+      }
+    }
+    if (lit !== lastLit) {
+      lastLit = lit;
+      [...$('#lamps').children].forEach((d, k) => d.classList.toggle('lit', k === lit));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  let wl = null;
+  async function wake(){ try { if (navigator.wakeLock && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => wl = null); } } catch(e){} }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (soundOn) wake();
+      samples = []; synced = false; startPinging(); // după ce telefonul a stat blocat, resincronizăm
+      if (ctx && ctx.state !== 'running' && soundOn) ctx.resume().catch(()=>{});
+    }
+  });
+
+  // ---------- controale ----------
+  $('#nameIn').value = store.get('name', '');
+  const hashCode = decodeURIComponent((location.hash || '').slice(1));
+  $('#codeIn').value = hashCode || store.get('code', '') || ('repetitie-' + Math.floor(1000 + Math.random() * 9000));
+  $('#createBtn').onclick = () => enter(true);
+  $('#joinBtn').onclick = () => enter(false);
+
+  let slideT = null;
+  $('#bpmRange').oninput = e => {
+    $('#bpmVal').textContent = e.target.value;
+    clearTimeout(slideT); slideT = setTimeout(() => changeTempo(+e.target.value), 80);
+  };
+  [['#m5', -5], ['#m1', -1], ['#p1', 1], ['#p5', 5]].forEach(([s, d]) => $(s).onclick = () => changeTempo(st.bpm + d));
+  const sel = $('#sigSel');
+  for (let b = 1; b <= 12; b++) { const o = document.createElement('option'); o.value = b; o.textContent = b + '/4'; sel.appendChild(o); }
+  sel.onchange = () => changeTempo(st.bpm, +sel.value);
+  $('#goBtn').onclick = () => { ensureAudio(); sendMsg({ t: st.running ? 'stop' : 'start' }); };
+
+  let taps = [];
+  $('#tapBtn').onclick = () => {
+    const t = clock();
+    if (taps.length && t - taps[taps.length - 1] > 2000) taps = [];
+    taps.push(t); if (taps.length > 5) taps.shift();
+    if (taps.length >= 3) changeTempo(60000 / ((taps[taps.length - 1] - taps[0]) / (taps.length - 1)));
+  };
+
+  $('#soundBtn').onclick = () => {
+    if (soundOn) { soundOn = false; if (ctx) cancelFrom(-Infinity); updateSoundBtn(); }
+    else ensureAudio();
+  };
+  const volR = $('#volRange'), nudR = $('#nudgeRange');
+  volR.value = volume; nudR.value = nudge;
+  const showVals = () => { $('#volVal').textContent = volume + '%'; $('#nudgeVal').textContent = (nudge > 0 ? '+' : '') + nudge + ' ms'; };
+  showVals();
+  volR.oninput = () => { volume = +volR.value; store.set('vol', volume); showVals(); };
+  nudR.oninput = () => { nudge = +nudR.value; store.set('nudge', nudge); showVals(); if (ctx) cancelFrom(-Infinity); schedEpoch = null; };
+
+  const doClaim = () => sendMsg({ t: 'claim', pin: $('#claimPin').value.trim() || (joined && joined.pin) || '' });
+  $('#claimBtn').onclick = () => {
+    const L = peers.find(p => p.id === leaderId);
+    $('#confirmFromWrap').hidden = !L;
+    if (L) $('#confirmFrom').textContent = L.name;
+    $('#claimPin').hidden = !hasPin;
+    $('#confirmClaim').hidden = false;
+  };
+  $('#claimBtn2').onclick = () => {
+    if (hasPin) { $('#claimBtn').onclick(); return; }
+    doClaim();
+  };
+  $('#claimYes').onclick = () => { $('#confirmClaim').hidden = true; doClaim(); };
+  $('#claimNo').onclick = () => { $('#confirmClaim').hidden = true; };
+
+  $('#copyBtn').onclick = async () => {
+    const link = location.origin + location.pathname + '#' + joined.code;
+    try { await navigator.clipboard.writeText(link); $('#copyBtn').textContent = 'Copiat'; }
+    catch(e) { $('#copyBtn').textContent = link; }
+    setTimeout(() => $('#copyBtn').textContent = 'Copiază linkul', 2000);
+  };
+
+  renderReadout(); updateSoundBtn();
+  connect();
+})();
+</script>
+</body>
+</html>
